@@ -1,0 +1,18 @@
+[project]
+name = "ai-agents"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "python-dotenv",
+    "pandas",
+    "langchain-core",
+    "langchain-huggingface",
+    "langchain-chroma",
+    "langchain-google-genai",
+    "sentence-transformers",
+    "streamlit",
+    "langchain-community",
+    "langchain-groq",
+    "beautifulsoup4",
+    "langchain-text-splitters",
+]
