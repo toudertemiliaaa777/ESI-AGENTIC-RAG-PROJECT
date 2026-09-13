@@ -15,4 +15,5 @@ dependencies = [
     "langchain-groq",
     "beautifulsoup4",
     "langchain-text-splitters",
+    "pypdf>=6.18.1",
 ]
