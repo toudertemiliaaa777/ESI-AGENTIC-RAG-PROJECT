@@ -1,7 +1,7 @@
 import streamlit as st
 from langchain_core.messages import HumanMessage, AIMessage
 
-from csv_ingest import ask_question
+from ESI_PROJECT.RAG_CHATBOT import ask_question
 
 st.set_page_config(
     page_title="ESI FAQ Assistant",
