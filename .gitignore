@@ -17,6 +17,11 @@ env/
 # --- Vector DB (regenerated locally from the CSV/ALIA.txt, not tracked) ---
 chroma_db/
 
+# --- Data Files (large/sensitive files, not tracked) ---
+ALIA.txt
+ESI_FAQ_updated_v3-2.csv
+Guide_nouvel_etudiant_ESI.pdf
+
 # --- OS / editor junk ---
 .DS_Store
 Thumbs.db

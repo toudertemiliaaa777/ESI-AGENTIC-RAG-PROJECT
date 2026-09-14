@@ -28,7 +28,7 @@ COLLECTION_NAME = "esi_rag"
 PERSIST_DIR = Path("./chroma_db")
 HASH_FILE = PERSIST_DIR / "source_hash.txt"
 EMBED_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-INGEST_VERSION = "v1-csv-alia-pdf"
+INGEST_VERSION = "v2-wide-chunks-full-tables"
 
 SYSTEM_PROMPT = """\
 You are a strict ESI FAQ assistant.
@@ -44,17 +44,18 @@ Rules:
    concours" question), synthesize the best answer you can from that information instead of refusing,
    and note which specific aspect(s) it covers.
 4. Do not be chatty, casual, or speculative. Keep answers concise, factual, and direct.
-5. If the answer is based on an official ESI source, say "Official source".
-6. If the answer is based on a non-official or student/community source, say "Non-official source".
-7. Always include the source in your answer, using the format:
+5. Always include the source in your answer, using the format:
    Source: <source>
-   Source type: <Official source / Non-official source>
-8. If the context contains a disclaimer, include it in the answer when relevant.
-9. If the answer is uncertain, clearly say that the information should be verified from the official ESI source.
-10. Detect the language the user asked in (English, French, or Arabic) and respond in that same language,
-    translating the context content as needed without changing any facts, numbers, or names.
-11. Use the chat history only to understand what the user is referring to (e.g. follow-up questions).
-    Never let earlier turns override rule 2 — every fact still has to come from the context below.
+6. If the context contains a disclaimer, include it in the answer when relevant.
+7. If the answer is uncertain, clearly say that the information should be verified from the official ESI source.
+8. Detect the language the user asked in (English, French, or Arabic) and respond in that same language,
+   translating the context content as needed without changing any facts, numbers, or names.
+9. Use the chat history only to understand what the user is referring to (e.g. follow-up questions).
+   Never let earlier turns override rule 2 — every fact still has to come from the context below.
+10. When the context contains a list or table (e.g. clubs, specializations, laboratories, platforms),
+    enumerate EVERY item present in the context, not a subset or a set of highlights. Completeness
+    takes priority over conciseness specifically for enumerable lists — never say "specific ones include"
+    or similar partial framing when the full list is available in the context.
 
 Context:
 {context}
@@ -127,8 +128,8 @@ def load_alia_documents(alia_path: Path) -> list[Document]:
 
 def chunk_documents(docs: list[Document]) -> list[Document]:
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1500,
-        chunk_overlap=200,
+        chunk_size=3000,
+        chunk_overlap=300,
         separators=["\n\n", "\n", ".", " "],
     )
     return splitter.split_documents(docs)
@@ -211,15 +212,15 @@ def build_rag_chain():
 
     embeddings = HuggingFaceEmbeddings(model_name=EMBED_MODEL)
     vector_store = get_vector_store(chunks, embeddings)
-    retriever = vector_store.as_retriever(search_kwargs={"k": 6})
+    retriever = vector_store.as_retriever(search_kwargs={"k": 8})
 
     prompt = build_prompt()
 
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-flash-latest",
-        temperature=0,
-    )
-    # llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
+    # llm = ChatGoogleGenerativeAI(
+    #     model="gemini-flash-latest",
+    #     temperature=0,
+    # )
+    llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
 
     chain = (
         {
@@ -247,52 +248,7 @@ def ask_question(question: str, chat_history: list = None) -> str:
 
 
 if __name__ == "__main__":
-    print("=" * 80)
-    print("ESI FAQ Assistant - Interactive Mode")
-    print("=" * 80)
-    print("Building RAG chain...")
-    print("\nType your questions below. Type 'exit' or 'quit' to end the conversation.")
-    print("The AI will remember previous questions and answers in this session.\n")
-    print("=" * 80 + "\n")
-    
-    chat_history = []
-    question_count = 0
-    
-    while True:
-        try:
-            user_input = input("You: ").strip()
-            
-            # Check for exit commands
-            if user_input.lower() in ["exit", "quit", "bye", "q"]:
-                print("\n" + "=" * 80)
-                print(f"Session ended. Total questions asked: {question_count}")
-                print("Thank you for using ESI FAQ Assistant!")
-                print("=" * 80)
-                break
-            
-            # Skip empty inputs
-            if not user_input:
-                continue
-            
-            question_count += 1
-            print("\nAssistant: ", end="", flush=True)
-            
-            # Get response with chat history
-            response = ask_question(user_input, chat_history)
-            print(response)
-            
-            # Add user message and assistant response to chat history
-            chat_history.append({"role": "user", "content": user_input})
-            chat_history.append({"role": "assistant", "content": response})
-            
-            print("\n" + "-" * 80 + "\n")
-            
-        except KeyboardInterrupt:
-            print("\n\n" + "=" * 80)
-            print("Session interrupted by user.")
-            print(f"Total questions asked: {question_count}")
-            print("=" * 80)
-            break
-        except Exception as e:
-            print(f"\nError: {e}")
-            print("Please try again.\n")
+    test_query = "What is ESI?"
+    print("Building RAG chain and testing with one query...")
+    print(f"Q: {test_query}")
+    print("A:", ask_question(test_query))
